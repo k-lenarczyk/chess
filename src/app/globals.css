@@ -15,13 +15,34 @@ body {
 
 :root {
   --tile-size: 100px;
+  --highlight: rgba(0, 0, 0, 0.1);
 }
 
-.attacking {
-  background-color: red;
+.attacking::after {
+  content: "";
+  display: block;
+  position: absolute;
+  width: calc(0.9 * var(--tile-size));
+  height: calc(0.9 * var(--tile-size));
+  border: calc(0.08 * var(--tile-size)) solid var(--highlight);
+  border-radius: 50%;
+  left: 5%;
+  top: 5%;
 }
 
 .highlight::after {
+  content: "";
+  display: block;
+  position: absolute;
+  width: calc(0.3 * var(--tile-size));
+  height: calc(0.3 * var(--tile-size));
+  background-color: var(--highlight);
+  border-radius: 50%;
+  left: 35%;
+  top: 35%;
+}
+
+/* .highlight::after {
   content: "";
   display: block;
   position: absolute;
@@ -31,7 +52,7 @@ body {
   border-radius: 50%;
   left: 25%;
   top: 25%;
-}
+} */
 
 @media all and (max-width: 450px) {
   :root {

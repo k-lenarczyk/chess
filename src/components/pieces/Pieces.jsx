@@ -2,22 +2,20 @@
 
 "use client";
 
-import { useReducer, useRef } from "react";
+import { useRef } from "react";
 import Piece from "./Piece";
-import { copyPosition, createPosition } from "@/utils/helper";
-import { reducer } from "../../reducer/positionReducer";
-import { ACTIONS } from "@/constants/global.js";
+import { copyPosition } from "@/utils/helper";
+import { useGameContext } from "../../contexts/Context";
+import { clearCandidates, makeNewMove } from "../../reducer/actions/move";
+import arbiter from "../../arbiter/arbiter";
+import { openPromotion } from "../../reducer/actions/popup";
 
 const Pieces = () => {
   const boardRef = useRef(null);
 
-  const initialPosition = createPosition();
+  const { gameState, dispatch } = useGameContext();
 
-  const [gameState, dispatch] = useReducer(reducer, {
-    positions: [initialPosition],
-    turn: "w",
-  });
-  let currentPosition = gameState.positions[gameState.positions.length - 1];
+  const currentPosition = gameState.position[gameState.position.length - 1];
 
   const calculateCoords = (e) => {
     const { width, left, top } = boardRef.current.getBoundingClientRect();
@@ -28,23 +26,39 @@ const Pieces = () => {
     return { x, y };
   };
 
-  const onDrop = (e) => {
-    let newPosition = copyPosition(currentPosition);
-    const { x, y } = calculateCoords(e);
+  const openPromotionBox = ({ rank, file, x, y }) => {
+    dispatch(openPromotion({ rank: Number(rank), file: Number(file), x, y }));
+  };
 
+  const move = (e) => {
+    const { x, y } = calculateCoords(e);
     const [piece, rank, file] = e.dataTransfer.getData("text").split(",");
 
-    // *** Temporary move-disabling system ***
-    // if (
-    //   gameState.turn !== piece[0] ||
-    //   (rank === x.toString() && file === y.toString())
-    // )
-    //   return;
+    if (
+      gameState.candidateMoves?.find((move) => move[0] === x && move[1] === y)
+    ) {
+      if ((piece === "wp" && x === 7) || (piece === "bp" && x === 0)) {
+        openPromotionBox({ rank, file, x, y });
+        return;
+      }
+      const newPosition = arbiter.performMove({
+        position: currentPosition,
+        piece,
+        rank,
+        file,
+        x,
+        y,
+      });
 
-    newPosition[rank][file] = "";
-    newPosition[x][y] = piece;
+      dispatch(makeNewMove({ newPosition }));
+    }
 
-    dispatch({ type: ACTIONS.UPDATE_POSITION, newPosition: newPosition });
+    dispatch(clearCandidates());
+  };
+
+  const onDrop = (e) => {
+    e.preventDefault();
+    move(e);
   };
   const onDragOver = (e) => e.preventDefault();
 
